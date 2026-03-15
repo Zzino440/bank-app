@@ -11,6 +11,8 @@ import PdfDropzone from "./PdfDropzone";
 import PdfConfirmModal, { type AccountUpdate } from "./PdfConfirmModal";
 import type { PdfResults } from "./PdfDropzone";
 import HistoryChart from "./HistoryChart";
+import SnapshotLog from "./SnapshotLog";
+import type { Snapshot } from "@/lib/types";
 
 export default function Dashboard() {
   const {
@@ -28,7 +30,7 @@ export default function Dashboard() {
     refetch: refetchAccounts,
   } = useAccounts();
 
-  const { snapshots, loading: loadingSnapshots, addSnapshot } = useSnapshots();
+  const { snapshots, loading: loadingSnapshots, addSnapshot, deleteSnapshot } = useSnapshots();
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editAccountId, setEditAccountId] = useState<string | null>(null);
@@ -105,6 +107,35 @@ export default function Dashboard() {
     setPdfResults(null);
   }
 
+  async function handleRestore(snapshot: Snapshot) {
+    if (!snapshot.snapshot?.accounts) return;
+
+    // Ripristina ogni account dallo snapshot
+    const updates = Object.entries(snapshot.snapshot.accounts).map(
+      ([id, snap]) => ({
+        id,
+        changes: {
+          saldo: snap.saldo,
+          ...(snap.is_etf && {
+            qty: snap.qty ?? null,
+            price: snap.price ?? null,
+            capital_invested: snap.capital_invested ?? null,
+          }),
+        } as Partial<Account>,
+      })
+    );
+
+    await updateAccounts(updates);
+
+    // Crea snapshot di ripristino
+    const restoredAccounts = accounts.map((a) => {
+      const snap = snapshot.snapshot.accounts[a.id];
+      return snap ? { ...a, saldo: snap.saldo, qty: snap.qty ?? a.qty, price: snap.price ?? a.price, capital_invested: snap.capital_invested ?? a.capital_invested } : a;
+    });
+    const newTotal = restoredAccounts.reduce((s, a) => s + a.saldo, 0);
+    await addSnapshot(restoredAccounts, newTotal, "↩ ripristino", `stato del ${snapshot.data}`);
+  }
+
   return (
     <div>
       {/* Bottone manuale */}
@@ -144,6 +175,12 @@ export default function Dashboard() {
       />
 
       <HistoryChart snapshots={snapshots} />
+
+      <SnapshotLog
+        snapshots={snapshots}
+        onRestore={handleRestore}
+        onDelete={deleteSnapshot}
+      />
 
       {editModalOpen && (
         <ManualEntryModal
