@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useSnapshots } from "@/hooks/useSnapshots";
+import type { Account } from "@/lib/types";
 import TotalSummary from "./TotalSummary";
 import AccountList from "./AccountList";
+import ManualEntryModal from "./ManualEntryModal";
 
 export default function Dashboard() {
   const {
@@ -15,9 +18,13 @@ export default function Dashboard() {
     totalLiquidity,
     totalInvested,
     totalCapitalInvested,
+    updateAccount,
   } = useAccounts();
 
-  const { snapshots, loading: loadingSnapshots } = useSnapshots();
+  const { snapshots, loading: loadingSnapshots, addSnapshot } = useSnapshots();
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editAccountId, setEditAccountId] = useState<string | null>(null);
 
   if (loadingAccounts || loadingSnapshots) {
     return (
@@ -35,12 +42,38 @@ export default function Dashboard() {
       : null;
 
   function handleEdit(id: string) {
-    // TODO: Step 7 — modal inserimento manuale
-    console.log("Edit:", id);
+    setEditAccountId(id);
+    setEditModalOpen(true);
+  }
+
+  function handleOpenManual() {
+    setEditAccountId(null);
+    setEditModalOpen(true);
+  }
+
+  async function handleSave(id: string, updates: Partial<Account>) {
+    await updateAccount(id, updates);
+
+    // Ricalcola totale con i nuovi valori
+    const updatedAccounts = accounts.map((a) =>
+      a.id === id ? { ...a, ...updates } : a
+    );
+    const newTotal = updatedAccounts.reduce((s, a) => s + a.saldo, 0);
+    await addSnapshot(updatedAccounts, newTotal, "aggiornamento manuale");
   }
 
   return (
     <div>
+      {/* Bottone manuale */}
+      <div className="mb-6 flex justify-end">
+        <button
+          onClick={handleOpenManual}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-[#0a1a0e] transition-opacity hover:opacity-85"
+        >
+          + Manuale
+        </button>
+      </div>
+
       <TotalSummary
         accounts={accounts}
         total={total}
@@ -64,6 +97,15 @@ export default function Dashboard() {
         totalCapitalInvested={totalCapitalInvested}
         pnl={pnl}
       />
+
+      {editModalOpen && (
+        <ManualEntryModal
+          accounts={accounts}
+          editAccountId={editAccountId}
+          onSave={handleSave}
+          onClose={() => setEditModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
