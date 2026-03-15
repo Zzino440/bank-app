@@ -10,6 +10,7 @@ import ManualEntryModal from "./ManualEntryModal";
 import PdfDropzone from "./PdfDropzone";
 import PdfConfirmModal, { type AccountUpdate } from "./PdfConfirmModal";
 import type { PdfResults } from "./PdfDropzone";
+import HistoryChart from "./HistoryChart";
 
 export default function Dashboard() {
   const {
@@ -141,6 +142,8 @@ export default function Dashboard() {
         totalCapitalInvested={totalCapitalInvested}
         pnl={pnl}
       />
+
+      <HistoryChart snapshots={snapshots} />
 
       {editModalOpen && (
         <ManualEntryModal
