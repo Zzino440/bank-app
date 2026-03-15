@@ -7,6 +7,9 @@ import type { Account } from "@/lib/types";
 import TotalSummary from "./TotalSummary";
 import AccountList from "./AccountList";
 import ManualEntryModal from "./ManualEntryModal";
+import PdfDropzone from "./PdfDropzone";
+import PdfConfirmModal, { type AccountUpdate } from "./PdfConfirmModal";
+import type { PdfResults } from "./PdfDropzone";
 
 export default function Dashboard() {
   const {
@@ -19,12 +22,16 @@ export default function Dashboard() {
     totalInvested,
     totalCapitalInvested,
     updateAccount,
+    updateAccounts,
+    addAccount,
+    refetch: refetchAccounts,
   } = useAccounts();
 
   const { snapshots, loading: loadingSnapshots, addSnapshot } = useSnapshots();
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editAccountId, setEditAccountId] = useState<string | null>(null);
+  const [pdfResults, setPdfResults] = useState<PdfResults | null>(null);
 
   if (loadingAccounts || loadingSnapshots) {
     return (
@@ -51,15 +58,50 @@ export default function Dashboard() {
     setEditModalOpen(true);
   }
 
-  async function handleSave(id: string, updates: Partial<Account>) {
+  async function handleManualSave(id: string, updates: Partial<Account>) {
     await updateAccount(id, updates);
 
-    // Ricalcola totale con i nuovi valori
     const updatedAccounts = accounts.map((a) =>
       a.id === id ? { ...a, ...updates } : a
     );
     const newTotal = updatedAccounts.reduce((s, a) => s + a.saldo, 0);
     await addSnapshot(updatedAccounts, newTotal, "aggiornamento manuale");
+  }
+
+  async function handlePdfApply(updates: AccountUpdate[], nota: string) {
+    // Applica nuovi account
+    for (const u of updates) {
+      if (u.isNew && u.newAccount) {
+        await addAccount(u.newAccount);
+      }
+    }
+
+    // Applica aggiornamenti a account esistenti
+    const existingUpdates = updates
+      .filter((u) => !u.isNew)
+      .map((u) => ({ id: u.id, changes: u.changes }));
+    if (existingUpdates.length > 0) {
+      await updateAccounts(existingUpdates);
+    }
+
+    // Refetch e crea snapshot
+    await refetchAccounts();
+
+    // Ricalcola totale con i valori aggiornati
+    let updatedAccounts = [...accounts];
+    for (const u of updates) {
+      if (u.isNew && u.newAccount) {
+        updatedAccounts.push(u.newAccount as Account);
+      } else {
+        updatedAccounts = updatedAccounts.map((a) =>
+          a.id === u.id ? { ...a, ...u.changes } : a
+        );
+      }
+    }
+    const newTotal = updatedAccounts.reduce((s, a) => s + a.saldo, 0);
+    await addSnapshot(updatedAccounts, newTotal, "PDF estratti conto", nota || undefined);
+
+    setPdfResults(null);
   }
 
   return (
@@ -73,6 +115,8 @@ export default function Dashboard() {
           + Manuale
         </button>
       </div>
+
+      <PdfDropzone onResults={setPdfResults} />
 
       <TotalSummary
         accounts={accounts}
@@ -102,8 +146,17 @@ export default function Dashboard() {
         <ManualEntryModal
           accounts={accounts}
           editAccountId={editAccountId}
-          onSave={handleSave}
+          onSave={handleManualSave}
           onClose={() => setEditModalOpen(false)}
+        />
+      )}
+
+      {pdfResults && (
+        <PdfConfirmModal
+          results={pdfResults}
+          accounts={accounts}
+          onApply={handlePdfApply}
+          onClose={() => setPdfResults(null)}
         />
       )}
     </div>
