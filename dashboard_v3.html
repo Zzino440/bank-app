@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il mio patrimonio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0e0f11; --surface:#16181c; --surface2:#1e2127; --surface3:#252830;
+  --border:#2a2d35; --text:#e8eaf0; --muted:#6b7080;
+  --accent:#7ee8a2; --accent2:#4fc3f7; --danger:#ff6b6b; --amber:#ffd166; --purple:#a78bfa;
+  --font:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+}
+body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; padding:2rem 1.5rem 4rem; max-width:920px; margin:0 auto; }
+
+.header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2rem; gap:12px; flex-wrap:wrap; }
+.header h1 { font-size:1rem; font-weight:500; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; font-family:var(--mono); }
+.header .date { font-size:0.78rem; color:var(--muted); font-family:var(--mono); margin-top:3px; }
+.header-actions { display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap; }
+.btn-add { background:var(--accent); color:#0a1a0e; border:none; padding:0.5rem 1rem; border-radius:6px; font-family:var(--font); font-size:0.82rem; font-weight:600; cursor:pointer; white-space:nowrap; }
+.btn-add:hover { opacity:0.85; }
+.btn-ghost { background:none; color:var(--muted); border:1px solid var(--border); padding:0.5rem 0.9rem; border-radius:6px; font-family:var(--mono); font-size:0.75rem; cursor:pointer; white-space:nowrap; }
+.btn-ghost:hover { color:var(--text); border-color:#3a3f4a; }
+
+/* DROPZONE */
+.dropzone-wrap { margin-bottom:2rem; }
+.dropzone {
+  border:1.5px dashed var(--border); border-radius:12px; padding:1.5rem;
+  text-align:center; cursor:pointer; transition:all 0.2s;
+  background:var(--surface);
+}
+.dropzone:hover, .dropzone.drag-over { border-color:var(--accent); background:rgba(126,232,162,0.04); }
+.dropzone-icon { font-size:1.8rem; margin-bottom:8px; }
+.dropzone-title { font-size:0.88rem; font-weight:500; color:var(--text); margin-bottom:4px; }
+.dropzone-sub { font-size:0.75rem; color:var(--muted); font-family:var(--mono); line-height:1.6; }
+.dropzone-sub strong { color:var(--accent); }
+.dropzone-progress { margin-top:1rem; display:none; }
+.progress-item { display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:0.75rem; color:var(--muted); padding:4px 0; }
+.progress-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.dot-loading { background:var(--amber); animation:pulse 1s infinite; }
+.dot-ok { background:var(--accent); }
+.dot-err { background:var(--danger); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* TOTALE */
+.totale-section { margin-bottom:1.5rem; }
+.totale-label { font-family:var(--mono); font-size:0.72rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px; }
+.totale-amount { font-family:var(--mono); font-size:3rem; font-weight:300; color:var(--text); letter-spacing:-1px; line-height:1; }
+.totale-amount .eur { font-size:1.5rem; color:var(--muted); margin-right:4px; }
+.totale-date { font-size:0.75rem; color:var(--muted); font-family:var(--mono); margin-top:6px; }
+.split-bar-wrap { margin:1.2rem 0 1.5rem; display:flex; flex-direction:column; gap:8px; }
+.split-bar { height:6px; border-radius:99px; background:var(--border); overflow:hidden; display:flex; gap:2px; }
+.seg { border-radius:99px; transition:width 0.6s ease; }
+.split-legend { display:flex; gap:1.5rem; flex-wrap:wrap; }
+.leg { display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--muted); font-family:var(--mono); }
+.leg-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+.metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:2rem; }
+.metric { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:0.9rem 1rem; }
+.metric-label { font-size:0.68rem; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+.metric-value { font-family:var(--mono); font-size:1.2rem; font-weight:500; color:var(--text); }
+.metric-sub { font-size:0.7rem; color:var(--muted); margin-top:3px; font-family:var(--mono); }
+.positive { color:var(--accent)!important; }
+.negative { color:var(--danger)!important; }
+
+.section-title { font-family:var(--mono); font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.65rem; }
+.conti-list { display:flex; flex-direction:column; gap:7px; margin-bottom:2rem; }
+.conto-row { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:0.85rem 1rem; display:flex; align-items:center; gap:12px; transition:border-color 0.15s; }
+.conto-row:hover { border-color:#3a3f4a; }
+.conto-row.inv-row { border-left:2px solid var(--accent); }
+.conto-row.cap-row { border-style:dashed; opacity:0.75; }
+.conto-icon { width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:0.6rem; font-weight:500; flex-shrink:0; text-align:center; line-height:1.2; }
+.conto-info { flex:1; min-width:0; }
+.conto-name { font-size:0.88rem; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.conto-type { font-size:0.7rem; color:var(--muted); font-family:var(--mono); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.conto-right { text-align:right; flex-shrink:0; }
+.conto-amount { font-family:var(--mono); font-size:0.95rem; font-weight:500; color:var(--text); }
+.conto-sub { font-family:var(--mono); font-size:0.7rem; margin-top:2px; }
+.btn-edit { background:none; border:1px solid var(--border); color:var(--muted); width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center; transition:all 0.15s; margin-left:6px; flex-shrink:0; }
+.btn-edit:hover { border-color:var(--accent); color:var(--accent); }
+
+.chart-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:1.25rem; margin-bottom:2rem; }
+canvas { width:100%!important; }
+
+/* PAC */
+.pac-controls { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:1.2rem; align-items:flex-end; }
+.pac-ctrl { display:flex; flex-direction:column; gap:4px; }
+.pac-ctrl label { font-size:0.68rem; color:var(--muted); font-family:var(--mono); text-transform:uppercase; }
+.pac-ctrl input[type=range] { width:140px; accent-color:var(--accent); cursor:pointer; }
+.pac-ctrl span { font-family:var(--mono); font-size:0.82rem; color:var(--accent); }
+.pac-summary { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1rem; }
+.pac-stat { background:var(--surface2); border-radius:8px; padding:0.65rem 0.9rem; flex:1; min-width:90px; }
+.pac-stat-label { font-size:0.65rem; color:var(--muted); font-family:var(--mono); text-transform:uppercase; margin-bottom:3px; }
+.pac-stat-val { font-family:var(--mono); font-size:1rem; font-weight:500; color:var(--text); }
+
+/* LOG */
+.log-row { display:flex; justify-content:space-between; align-items:center; font-family:var(--mono); font-size:0.75rem; color:var(--muted); padding:0.5rem 0; border-bottom:1px solid var(--border); gap:10px; }
+.log-row:last-child { border-bottom:none; }
+.log-total { color:var(--text); font-weight:500; flex-shrink:0; }
+.log-desc { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.log-note { font-size:0.68rem; color:var(--accent); font-style:italic; }
+.log-fonte-pdf { color:var(--accent2); }
+.btn-del-log { background:none; border:none; color:#3a3f4a; font-size:0.8rem; cursor:pointer; padding:2px 4px; border-radius:4px; transition:color 0.15s; flex-shrink:0; }
+.btn-del-log:hover { color:var(--danger); }
+.btn-restore { background:none; border:none; color:#3a3f4a; font-size:0.85rem; cursor:pointer; padding:2px 4px; border-radius:4px; transition:color 0.15s; flex-shrink:0; }
+.btn-restore:hover { color:var(--accent2); }
+
+/* HINT */
+.upload-hint { background:var(--surface); border:1px dashed #3a3f4a; border-radius:10px; padding:0.9rem 1.1rem; margin-bottom:2rem; display:flex; align-items:flex-start; gap:10px; }
+.upload-hint-text { font-size:0.75rem; color:var(--muted); font-family:var(--mono); line-height:1.7; }
+.upload-hint-text strong { color:var(--accent); }
+
+/* MODAL */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:100; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:1.5rem; width:100%; max-width:480px; margin:1rem; max-height:90vh; overflow-y:auto; }
+.modal h2 { font-size:0.95rem; font-weight:600; margin-bottom:0.3rem; }
+.modal-sub { font-size:0.75rem; color:var(--muted); font-family:var(--mono); margin-bottom:1.2rem; }
+.form-group { margin-bottom:0.85rem; }
+.form-group label { display:block; font-size:0.72rem; color:var(--muted); font-family:var(--mono); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.06em; }
+.form-group input, .form-group select, .form-group textarea { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:7px; color:var(--text); font-family:var(--mono); font-size:0.88rem; padding:0.55rem 0.8rem; outline:none; transition:border-color 0.15s; }
+.form-group input:focus, .form-group select:focus { border-color:var(--accent); }
+.form-group select option { background:var(--surface2); }
+.form-group textarea { resize:vertical; min-height:52px; }
+.modal-actions { display:flex; gap:8px; margin-top:1rem; }
+.btn-primary { flex:1; background:var(--accent); color:#0a1a0e; border:none; padding:0.6rem; border-radius:7px; font-family:var(--font); font-weight:600; font-size:0.85rem; cursor:pointer; }
+.btn-primary:hover { opacity:0.85; }
+.btn-secondary { flex:1; background:none; color:var(--muted); border:1px solid var(--border); padding:0.6rem; border-radius:7px; font-family:var(--font); font-size:0.85rem; cursor:pointer; }
+.btn-secondary:hover { color:var(--text); }
+
+/* CONFIRM MODAL */
+.confirm-row { display:flex; align-items:center; gap:10px; padding:0.65rem 0; border-bottom:1px solid var(--border); }
+.confirm-row:last-child { border-bottom:none; }
+.confirm-icon { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-family:var(--mono); flex-shrink:0; }
+.confirm-label { flex:1; font-size:0.78rem; color:var(--muted); font-family:var(--mono); }
+.confirm-val { font-family:var(--mono); font-size:0.85rem; font-weight:500; width:110px; }
+.confirm-status { font-size:0.8rem; flex-shrink:0; width:16px; text-align:center; }
+
+@media(max-width:640px){ .metrics{grid-template-columns:1fr 1fr;} .totale-amount{font-size:2.2rem;} .pac-controls{flex-direction:column;} }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div><h1>Patrimonio · Lorenzo</h1><div class="date" id="oggi"></div></div>
+  <div class="header-actions">
+    <button class="btn-ghost" onclick="exportJSON()">⬇ Esporta</button>
+    <label class="btn-ghost" style="cursor:pointer">⬆ Importa<input type="file" accept=".json" onchange="importJSON(event)" style="display:none"></label>
+    <button class="btn-add" onclick="openModal()">+ Manuale</button>
+  </div>
+</div>
+
+<!-- DROPZONE -->
+<div class="dropzone-wrap">
+  <div class="dropzone" id="dropzone" onclick="document.getElementById('pdf-input').click()"
+    ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+    <input type="file" id="pdf-input" accept=".pdf" multiple style="display:none" onchange="handleFiles(this.files)">
+    <div class="dropzone-icon">📂</div>
+    <div class="dropzone-title">Trascina qui i PDF degli estratti conto</div>
+    <div class="dropzone-sub">
+      Oppure clicca per selezionare · Puoi caricare più file insieme<br>
+      <strong>CA</strong> · <strong>N26</strong> · <strong>TR estratto conto</strong> · <strong>TR estratto titoli</strong>
+    </div>
+    <div class="dropzone-progress" id="dropzone-progress"></div>
+  </div>
+</div>
+
+<!-- TOTALE -->
+<div class="totale-section">
+  <div class="totale-label">Totale patrimonio</div>
+  <div class="totale-amount"><span class="eur">€</span><span id="totale-val">0</span></div>
+  <div class="totale-date" id="totale-date"></div>
+  <div class="split-bar-wrap">
+    <div class="split-bar">
+      <div class="seg" id="bar-ca"    style="width:0%;background:#4fc3f7"></div>
+      <div class="seg" id="bar-n26"   style="width:0%;background:#a78bfa"></div>
+      <div class="seg" id="bar-trliq" style="width:0%;background:#67e8f9"></div>
+      <div class="seg" id="bar-etf"   style="width:0%;background:#7ee8a2"></div>
+    </div>
+    <div class="split-legend">
+      <div class="leg"><div class="leg-dot" style="background:#4fc3f7"></div>CA <span id="pct-ca">0%</span></div>
+      <div class="leg"><div class="leg-dot" style="background:#a78bfa"></div>N26 <span id="pct-n26">0%</span></div>
+      <div class="leg"><div class="leg-dot" style="background:#67e8f9"></div>TR cash <span id="pct-trliq">0%</span></div>
+      <div class="leg"><div class="leg-dot" style="background:#7ee8a2"></div>ETF <span id="pct-etf">0%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="metrics">
+  <div class="metric"><div class="metric-label">Liquidità</div><div class="metric-value" id="met-liq">€0</div><div class="metric-sub">CA + N26 + TR cash</div></div>
+  <div class="metric"><div class="metric-label">Investito</div><div class="metric-value" id="met-inv">€0</div><div class="metric-sub">valore di mercato</div></div>
+  <div class="metric"><div class="metric-label">P&amp;L ETF</div><div class="metric-value" id="met-rend">—</div><div class="metric-sub" id="met-rend-sub">vs capitale versato</div></div>
+  <div class="metric"><div class="metric-label">Ultimo agg.</div><div class="metric-value" id="met-data" style="font-size:0.9rem">—</div><div class="metric-sub" id="met-fonte">—</div></div>
+</div>
+
+<div class="section-title">Conti correnti e liquidità</div>
+<div class="conti-list" id="list-liq"></div>
+
+<div class="section-title">Portafoglio ETF</div>
+<div class="conti-list" id="list-etf"></div>
+
+<div class="chart-card">
+  <div class="section-title" style="margin-bottom:1rem">Andamento patrimonio</div>
+  <canvas id="chart-patrimonio" height="110"></canvas>
+</div>
+
+<div class="chart-card">
+  <div class="section-title" style="margin-bottom:1.2rem">Proiezione PAC</div>
+  <div class="pac-controls">
+    <div class="pac-ctrl">
+      <label>Versamento mensile</label>
+      <input type="range" id="pac-mens" min="20" max="500" step="10" value="80" oninput="updatePAC()">
+      <span id="pac-mens-val">€80/mese</span>
+    </div>
+    <div class="pac-ctrl">
+      <label>Rendimento annuo</label>
+      <input type="range" id="pac-rate" min="2" max="12" step="0.5" value="7" oninput="updatePAC()">
+      <span id="pac-rate-val">7%</span>
+    </div>
+    <div class="pac-ctrl">
+      <label>Anni</label>
+      <input type="range" id="pac-anni" min="5" max="30" step="1" value="20" oninput="updatePAC()">
+      <span id="pac-anni-val">20 anni</span>
+    </div>
+  </div>
+  <div class="pac-summary" id="pac-summary"></div>
+  <canvas id="chart-pac" height="110"></canvas>
+</div>
+
+<div class="upload-hint">
+  <div style="margin-top:2px">💡</div>
+  <div class="upload-hint-text">
+    <strong>Aggiornamento automatico:</strong> trascina i PDF degli estratti nella zona in alto. La dashboard li legge e ti mostra i valori trovati prima di applicarli.<br>
+    <strong>Backup:</strong> usa Esporta/Importa per non perdere lo storico quando scarichi una nuova versione.
+  </div>
+</div>
+
+<div class="section-title">Storico aggiornamenti</div>
+<div id="log-list"></div>
+
+<!-- MODAL MANUALE -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>Aggiorna saldo</h2>
+    <div class="form-group">
+      <label>Conto / strumento</label>
+      <select id="sel-conto" onchange="onContoChange()">
+        <optgroup label="Liquidità">
+          <option value="ca">Crédit Agricole</option>
+          <option value="n26">N26 – Conto principale</option>
+          <option value="n26s">N26 – Spazio risparmi</option>
+          <option value="trliq">Trade Republic – Liquidità</option>
+        </optgroup>
+        <optgroup label="Investimenti ETF">
+          <option value="etf1">iShares Digital Security ETF</option>
+          <option value="etf2">Global X Cloud Computing ETF</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="form-group" id="grp-saldo">
+      <label>Saldo (€)</label>
+      <input type="number" id="inp-saldo" placeholder="es. 25135.36" step="0.01" min="0">
+    </div>
+    <div class="form-group" id="grp-qty" style="display:none">
+      <label>Quantità (pezzi)</label>
+      <input type="number" id="inp-qty" placeholder="es. 35.264301" step="0.000001" min="0">
+    </div>
+    <div class="form-group" id="grp-price" style="display:none">
+      <label>Prezzo per unità (€)</label>
+      <input type="number" id="inp-price" placeholder="es. 8.37" step="0.01" min="0">
+    </div>
+    <div class="form-group" id="grp-cap" style="display:none">
+      <label>Capitale versato totale (€)</label>
+      <input type="number" id="inp-cap" placeholder="es. 408.65" step="0.01" min="0">
+    </div>
+    <div class="form-group">
+      <label>Nota (opzionale)</label>
+      <textarea id="inp-nota" placeholder="es. dopo stipendio marzo"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal')">Annulla</button>
+      <button class="btn-primary" onclick="salva()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFERMA PDF -->
+<div class="modal-overlay" id="modal-pdf">
+  <div class="modal" style="max-width:520px">
+    <h2>Valori estratti dai PDF</h2>
+    <div class="modal-sub" id="pdf-modal-sub">Controlla e modifica prima di applicare</div>
+    <div id="confirm-rows"></div>
+    <div class="form-group" style="margin-top:1rem">
+      <label>Nota aggiornamento</label>
+      <input type="text" id="pdf-nota" placeholder="es. estratti marzo 2026">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal('modal-pdf')">Annulla</button>
+      <button class="btn-primary" onclick="applicaPDF()">Applica aggiornamento</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ── SETUP PDF.js ──────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── DEFAULTS ──────────────────────────────────────────
+const DEFAULTS = {
+  conti: {
+    ca:    { nome:'Crédit Agricole',              tipo:'Conto corrente',  saldo:25135.36, colore:'#4fc3f7', isEtf:false },
+    n26:   { nome:'N26',                          tipo:'Conto principale',saldo:1200.93,  colore:'#a78bfa', isEtf:false },
+    n26s:  { nome:'N26',                          tipo:'Spazio risparmi', saldo:0.51,     colore:'#c4b5fd', isEtf:false },
+    trliq: { nome:'Trade Republic',               tipo:'Liquidità conto', saldo:12.02,    colore:'#67e8f9', isEtf:false },
+    etf1:  { nome:'iShares Digital Security ETF', tipo:'IE00BG0J4C88',    saldo:294.99,   colore:'#7ee8a2', isEtf:true, qty:35.264301, price:8.37 },
+    etf2:  { nome:'Global X Cloud Computing ETF', tipo:'IE00BMH5YF48',    saldo:84.20,    colore:'#34d399', isEtf:true, qty:10.00,     price:8.42 },
+  },
+  capitaleEtf: 408.65,
+  storico: [{
+    data:'14 mar 2026', dataBreve:'14 mar', totale:26728.01, fonte:'estratti conto PDF', nota:'',
+    snapshot:{ conti:{ ca:{nome:'Crédit Agricole',tipo:'Conto corrente',saldo:25135.36,colore:'#4fc3f7',isEtf:false},n26:{nome:'N26',tipo:'Conto principale',saldo:1200.93,colore:'#a78bfa',isEtf:false},n26s:{nome:'N26',tipo:'Spazio risparmi',saldo:0.51,colore:'#c4b5fd',isEtf:false},trliq:{nome:'Trade Republic',tipo:'Liquidità conto',saldo:12.02,colore:'#67e8f9',isEtf:false},etf1:{nome:'iShares Digital Security ETF',tipo:'IE00BG0J4C88',saldo:294.99,colore:'#7ee8a2',isEtf:true,qty:35.264301,price:8.37},etf2:{nome:'Global X Cloud Computing ETF',tipo:'IE00BMH5YF48',saldo:84.20,colore:'#34d399',isEtf:true,qty:10.00,price:8.42}},capitaleEtf:408.65 }
+  }]
+};
+
+const KEY = 'patrimonio_v3';
+function load() { try { const r=localStorage.getItem(KEY); return r?JSON.parse(r):JSON.parse(JSON.stringify(DEFAULTS)); } catch { return JSON.parse(JSON.stringify(DEFAULTS)); } }
+function save(s) { localStorage.setItem(KEY,JSON.stringify(s)); }
+
+let state = load();
+let chartP=null, chartPAC=null;
+
+// ── UTILS ─────────────────────────────────────────────
+const fmt   = n => new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const fmt0  = n => new Intl.NumberFormat('it-IT',{minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
+const today  = () => new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+const todayB = () => new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
+const parseITA = s => parseFloat(String(s).replace(/\./g,'').replace(',','.'));
+
+// ── RENDER ────────────────────────────────────────────
+function render() {
+  const c=state.conti;
+  const liq=['ca','n26','n26s','trliq'].reduce((s,k)=>s+(c[k]?.saldo||0),0);
+  const inv=Object.entries(c).filter(([,ct])=>ct.isEtf).reduce((s,[,ct])=>s+(ct.saldo||0),0);
+  const tot=liq+inv;
+  const cap=state.capitaleEtf||0;
+  const rend=cap>0?(inv-cap)/cap*100:null;
+
+  document.getElementById('oggi').textContent=today();
+  document.getElementById('totale-val').textContent=fmt(tot);
+  const last=state.storico[state.storico.length-1];
+  if(last) document.getElementById('totale-date').textContent=`aggiornato al ${last.data}`;
+
+  const pct  = k  => tot>0?((c[k]?.saldo||0)/tot*100).toFixed(1)+'%':'0%';
+  const pctG = ks => tot>0?(ks.reduce((s,k)=>s+(c[k]?.saldo||0),0)/tot*100).toFixed(1)+'%':'0%';
+  const pctEtf = () => tot>0?(Object.entries(c).filter(([,ct])=>ct.isEtf).reduce((s,[,ct])=>s+(ct.saldo||0),0)/tot*100).toFixed(1)+'%':'0%';
+  ['ca','trliq'].forEach(k=>{ document.getElementById('bar-'+k).style.width=pct(k); document.getElementById('pct-'+k).textContent=pct(k); });
+  document.getElementById('bar-n26').style.width=pctG(['n26','n26s']); document.getElementById('pct-n26').textContent=pctG(['n26','n26s']);
+  document.getElementById('bar-etf').style.width=pctEtf(); document.getElementById('pct-etf').textContent=pctEtf();
+
+  document.getElementById('met-liq').textContent='€'+fmt0(liq);
+  document.getElementById('met-inv').textContent='€'+fmt0(inv);
+  const rendEl=document.getElementById('met-rend');
+  if(rend!==null){ rendEl.textContent=(rend>=0?'+':'')+rend.toFixed(1)+'%'; rendEl.className='metric-value '+(rend>=0?'positive':'negative'); document.getElementById('met-rend-sub').textContent=`€${fmt0(cap)} versati`; }
+  if(last){ document.getElementById('met-data').textContent=last.dataBreve||last.data; document.getElementById('met-fonte').textContent=last.fonte||'—'; }
+
+  // liquidità
+  const liqEl=document.getElementById('list-liq'); liqEl.innerHTML='';
+  ['ca','n26','n26s','trliq'].forEach(k=>{
+    const ct=c[k]; const ab=k==='ca'?'CA':k.startsWith('n26')?'N26':'TR';
+    liqEl.innerHTML+=`<div class="conto-row">
+      <div class="conto-icon" style="background:${ct.colore}22;color:${ct.colore}">${ab}</div>
+      <div class="conto-info"><div class="conto-name">${ct.nome}</div><div class="conto-type">${ct.tipo}</div></div>
+      <div class="conto-right"><div class="conto-amount">€${fmt(ct.saldo)}</div></div>
+      <button class="btn-edit" onclick="openModalPer('${k}')">✎</button>
+    </div>`;
+  });
+
+  // ETF: tutti i conti con isEtf:true
+  const invEl=document.getElementById('list-etf'); invEl.innerHTML='';
+  Object.entries(c).filter(([,ct])=>ct.isEtf).forEach(([k,ct])=>{
+    invEl.innerHTML+=`<div class="conto-row inv-row">
+      <div class="conto-icon" style="background:${ct.colore}22;color:${ct.colore};font-size:0.56rem">ETF</div>
+      <div class="conto-info"><div class="conto-name">${ct.nome}</div><div class="conto-type">${ct.tipo} · ${ct.qty?.toFixed(4)} pz · €${ct.price?.toFixed(2)}/pz</div></div>
+      <div class="conto-right"><div class="conto-amount">€${fmt(ct.saldo)}</div></div>
+      <button class="btn-edit" onclick="openModalPer('${k}')">✎</button>
+    </div>`;
+  });
+  invEl.innerHTML+=`<div class="conto-row cap-row">
+    <div class="conto-icon" style="background:#ffd16622;color:#ffd166;font-size:0.56rem">PAC</div>
+    <div class="conto-info"><div class="conto-name">Capitale versato (PAC)</div><div class="conto-type">Totale versamenti in ETF</div></div>
+    <div class="conto-right">
+      <div class="conto-amount" style="color:var(--amber)">€${fmt(cap)}</div>
+      ${rend!==null?`<div class="conto-sub ${rend>=0?'positive':'negative'}">${rend>=0?'+':''}${rend.toFixed(1)}% P&L</div>`:''}
+    </div>
+    <button class="btn-edit" onclick="openCapitale()">✎</button>
+  </div>`;
+
+  // log
+  const logEl=document.getElementById('log-list');
+  const sto=[...state.storico].map((s,i)=>({...s,_idx:i})).reverse().slice(0,15);
+  const isPdf = s => s.fonte && (s.fonte.includes('PDF') || s.fonte.includes('pdf') || s.fonte.includes('estratti'));
+  logEl.innerHTML=sto.length?sto.map(s=>`<div class="log-row">
+    <span style="flex-shrink:0;min-width:70px">${s.data}</span>
+    <span class="log-desc ${isPdf(s)?'log-fonte-pdf':''}">${s.fonte||'—'}${s.nota?` · <span class="log-note">${s.nota}</span>`:''}</span>
+    <span class="log-total">€${fmt(s.totale)}</span>
+    <div style="display:flex;gap:2px;flex-shrink:0">
+      ${s.snapshot?`<button class="btn-restore" title="Ripristina a questo stato" onclick="ripristinaLog(${s._idx})">↩</button>`:''}
+      <button class="btn-del-log" title="Rimuovi dal log" onclick="deleteLog(${s._idx})">✕</button>
+    </div>
+  </div>`).join(''):'<div class="log-row" style="color:var(--muted)">Nessun aggiornamento.</div>';
+
+  renderChartPatrimonio();
+  updatePAC();
+}
+
+function renderChartPatrimonio() {
+  const ctx=document.getElementById('chart-patrimonio').getContext('2d');
+  const sto=state.storico.slice(-24);
+  if(chartP){chartP.destroy();chartP=null;}
+  if(!sto.length){drawEmpty(ctx,'Trascina i PDF per iniziare');return;}
+  chartP=new Chart(ctx,{type:'line',data:{
+    labels:sto.map(s=>s.dataBreve||s.data),
+    datasets:[{data:sto.map(s=>s.totale),borderColor:'#7ee8a2',backgroundColor:'rgba(126,232,162,0.07)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#7ee8a2',fill:true,tension:0.35}]
+  },options:chartOpts(v=>'€'+fmt0(v))});
+}
+
+function updatePAC() {
+  const mens=parseFloat(document.getElementById('pac-mens').value);
+  const rate=parseFloat(document.getElementById('pac-rate').value)/100;
+  const anni=parseInt(document.getElementById('pac-anni').value);
+  const rM=rate/12; const mesi=anni*12;
+  document.getElementById('pac-mens-val').textContent=`€${mens}/mese`;
+  document.getElementById('pac-rate-val').textContent=`${document.getElementById('pac-rate').value}%`;
+  document.getElementById('pac-anni-val').textContent=`${anni} anni`;
+  const fv=mens*((Math.pow(1+rM,mesi)-1)/rM);
+  const versato=mens*mesi;
+  document.getElementById('pac-summary').innerHTML=`
+    <div class="pac-stat"><div class="pac-stat-label">Versato</div><div class="pac-stat-val">€${fmt0(versato)}</div></div>
+    <div class="pac-stat"><div class="pac-stat-label">Valore finale</div><div class="pac-stat-val positive">€${fmt0(fv)}</div></div>
+    <div class="pac-stat"><div class="pac-stat-label">Guadagno</div><div class="pac-stat-val positive">+€${fmt0(fv-versato)}</div></div>
+    <div class="pac-stat"><div class="pac-stat-label">Moltiplicatore</div><div class="pac-stat-val positive">×${(fv/versato).toFixed(1)}</div></div>`;
+  const lY=[],dPAC=[],dV=[];
+  for(let a=1;a<=anni;a++){const m=a*12;lY.push('Anno '+a);dPAC.push(+(mens*((Math.pow(1+rM,m)-1)/rM)).toFixed(2));dV.push(mens*m);}
+  const ctx=document.getElementById('chart-pac').getContext('2d');
+  if(chartPAC){chartPAC.destroy();chartPAC=null;}
+  chartPAC=new Chart(ctx,{type:'line',data:{labels:lY,datasets:[
+    {label:'Portafoglio',data:dPAC,borderColor:'#7ee8a2',backgroundColor:'rgba(126,232,162,0.1)',borderWidth:2,pointRadius:2,fill:true,tension:0.3},
+    {label:'Versato',data:dV,borderColor:'#ffd166',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false}
+  ]},options:{...chartOpts(v=>'€'+fmt0(v)),plugins:{legend:{display:true,labels:{color:'#6b7080',font:{family:'DM Mono',size:10},boxWidth:10}}}}});
+}
+
+function chartOpts(cb){return{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'€ '+fmt(c.parsed.y)},backgroundColor:'#1e2127',borderColor:'#2a2d35',borderWidth:1,titleColor:'#6b7080',bodyColor:'#e8eaf0',padding:10}},scales:{x:{grid:{color:'#2a2d35'},ticks:{color:'#6b7080',font:{family:'DM Mono',size:10}}},y:{grid:{color:'#2a2d35'},ticks:{color:'#6b7080',font:{family:'DM Mono',size:10},callback:cb}}}};}
+function drawEmpty(ctx,txt){ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);ctx.fillStyle='#6b7080';ctx.font='12px DM Mono,monospace';ctx.textAlign='center';ctx.fillText(txt,ctx.canvas.offsetWidth/2||200,55);}
+
+// ── MODAL MANUALE ─────────────────────────────────────
+let _editKey=null;
+function openModal(key){
+  _editKey=key||null;
+  document.getElementById('modal').classList.add('open');
+  const sel=document.getElementById('sel-conto');
+  if(key){sel.value=key;const ct=state.conti[key];document.getElementById('inp-saldo').value=ct.saldo||'';document.getElementById('inp-qty').value=ct.qty||'';document.getElementById('inp-price').value=ct.price||'';document.getElementById('inp-cap').value=state.capitaleEtf||'';}
+  else{['inp-saldo','inp-qty','inp-price','inp-cap','inp-nota'].forEach(id=>document.getElementById(id).value='');}
+  onContoChange();
+}
+function openModalPer(k){openModal(k);}
+function openCapitale(){_editKey='__cap__';document.getElementById('modal').classList.add('open');document.getElementById('sel-conto').value='etf1';document.getElementById('inp-cap').value=state.capitaleEtf||'';onContoChange();}
+function closeModal(id){
+  document.getElementById(id||'modal').classList.remove('open');
+  if(id==='modal-pdf'){
+    _pdfResults = {};
+    document.getElementById('dropzone-progress').style.display = 'none';
+    document.getElementById('dropzone-progress').innerHTML = '';
+    document.getElementById('pdf-input').value = '';
+  }
+}
+function onContoChange(){
+  const isEtf=document.getElementById('sel-conto').value.startsWith('etf');
+  document.getElementById('grp-saldo').style.display=isEtf?'none':'block';
+  document.getElementById('grp-qty').style.display=isEtf?'block':'none';
+  document.getElementById('grp-price').style.display=isEtf?'block':'none';
+  document.getElementById('grp-cap').style.display=isEtf?'block':'none';
+}
+
+function salva(){
+  const key=_editKey||document.getElementById('sel-conto').value;
+  const nota=document.getElementById('inp-nota').value.trim();
+  if(key==='__cap__'){const v=parseFloat(document.getElementById('inp-cap').value);if(!isNaN(v))state.capitaleEtf=v;}
+  else{
+    const ct=state.conti[key];
+    if(ct.isEtf){
+      const qty=parseFloat(document.getElementById('inp-qty').value);
+      const price=parseFloat(document.getElementById('inp-price').value);
+      const cap=parseFloat(document.getElementById('inp-cap').value);
+      if(!isNaN(qty))ct.qty=qty;
+      if(!isNaN(price))ct.price=price;
+      if(!isNaN(qty)&&!isNaN(price))ct.saldo=parseFloat((qty*price).toFixed(2));
+      if(!isNaN(cap))state.capitaleEtf=cap;
+    }else{
+      const v=parseFloat(document.getElementById('inp-saldo').value);
+      if(isNaN(v)||v<0)return;
+      ct.saldo=v;
+    }
+  }
+  pushStorico('aggiornamento manuale', nota);
+  save(state);closeModal('modal');render();
+}
+
+function pushStorico(fonte, nota=''){
+  const tot=Object.values(state.conti).reduce((s,c)=>s+(c.saldo||0),0);
+  const snap={conti:JSON.parse(JSON.stringify(state.conti)),capitaleEtf:state.capitaleEtf};
+  state.storico.push({data:today(),dataBreve:todayB(),totale:parseFloat(tot.toFixed(2)),fonte,nota,snapshot:snap});
+}
+
+function ripristinaLog(idx){
+  const entry=state.storico[idx];
+  if(!entry?.snapshot)return;
+  state.conti=JSON.parse(JSON.stringify(entry.snapshot.conti));
+  state.capitaleEtf=entry.snapshot.capitaleEtf;
+  state.storico=state.storico.slice(0,idx+1);
+  pushStorico('↩ ripristino',`stato del ${entry.data}`);
+  save(state);render();
+}
+
+function deleteLog(idx){state.storico.splice(idx,1);save(state);render();}
+
+// ── PDF EXTRACTION ────────────────────────────────────
+async function extractTextFromPDF(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  let text = '';
+  for(let i=1; i<=pdf.numPages; i++){
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it=>it.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+function detectBank(text) {
+  const t = text.toUpperCase();
+  if(t.includes('ESTRATTO CONTO TITOLI')) return 'tr-titoli';
+  if(t.includes('TRADE REPUBLIC')) return 'tr-conto';
+  if(t.includes('N26')) return 'n26';
+  // CA: logo è immagine, ma il documento ha pattern univoci
+  if(t.includes('CR') && t.includes('DIT AGRICOLE')) return 'ca';
+  if(t.includes('LISTA MOVIMENTI ESTRATTO CONTO') || t.includes('SALDO CONTABILE') || t.includes('ACCREDITO EMOLUMENTI') || t.includes('NOWBANKING')) return 'ca';
+  return null;
+}
+
+function extractCA(text) {
+  // Pattern 1: "Saldo finale 25.135,36 EUR" (intestazione)
+  let m = text.match(/[Ss]aldo\s+finale\s+([\d.]+,\d{2})\s*EUR/);
+  if(m) return { ca: parseITA(m[1]) };
+  // Pattern 2: "Saldo Contabile 25.135,36" (fondo tabella)
+  m = text.match(/[Ss]aldo\s+[Cc]ontabile\s+([\d.]+,\d{2})/);
+  if(m) return { ca: parseITA(m[1]) };
+  // Pattern 3: "Saldo disponibile 25.135,36 EUR"
+  m = text.match(/[Ss]aldo\s+disponibile\s+([\d.]+,\d{2})\s*EUR/);
+  if(m) return { ca: parseITA(m[1]) };
+  return null;
+}
+
+function extractN26(text) {
+  const result = {};
+  // All occurrences of "Il tuo nuovo saldo"
+  const all = [...text.matchAll(/Il tuo nuovo saldo\s*\+?([\d.]+,\d{2})€/g)];
+  if(!all.length) return null;
+  result.n26 = parseITA(all[0][1]);
+  // Risparmi: last occurrence if there's a "Spazio" or "Risparmi" marker
+  if(all.length > 1 && /Spazio|Risparmi/i.test(text)) {
+    result.n26s = parseITA(all[all.length-1][1]);
+  }
+  return result;
+}
+
+function extractTRConto(text) {
+  // Riassuntivo table: "Conto corrente X,XX € X,XX € X,XX € SALDO_FINALE €"
+  const m = text.match(/Conto corrente\s+([\d,]+)\s*€\s+([\d,]+)\s*€\s+([\d,]+)\s*€\s+([\d,]+)\s*€/);
+  if(m) return { trliq: parseITA(m[4]) };
+  // Fallback: "Crédit Agricole 12,02 €" in panoramica del saldo
+  const m2 = text.match(/Cr[eé]dit\s+Agricole\s+([\d,]+)\s*€/i);
+  if(m2) return { trliq: parseITA(m2[1]) };
+  return null;
+}
+
+function extractTRContoAcquisti(text) {
+  // Cerca tutte le righe "Commercio" di tipo Buy trade o Savings plan
+  // Formato: "...Buy trade/Savings plan execution [desc] USCITA € SALDO €"
+  // La USCITA è il primo importo, il SALDO è il secondo
+  let totale = 0;
+  let count = 0;
+  const re = /(?:Buy trade|Savings plan execution)[^€]{5,400}?([\d]+,[\d]{2})\s*€\s+[\d,]+\s*€/g;
+  let m;
+  while((m = re.exec(text)) !== null) {
+    totale += parseITA(m[1]);
+    count++;
+  }
+  return count > 0 ? { totale: parseFloat(totale.toFixed(2)), count } : null;
+}
+
+function extractTRTitoli(text) {
+  const results = [];
+  // Cattura l'intero blocco: qty Pz. → (testo nome) → ISIN: XX → (testo) → data → market value
+  // Formato TR: "35,264301 Pz. [nome multiriga] ISIN: IE00BG0J4C88 ... [prezzo]\n[data]\n[mktval]"
+  const blockRe = /([\d]+,[\d]{1,6})\s+Pz\.\s+([\s\S]{1,300}?)ISIN:\s*([A-Z]{2}[A-Z0-9]{10})([\s\S]{1,150}?)(\d{2}\.\d{2}\.\d{4})\s+([\d]+,[\d]{1,2})/g;
+  let m;
+  while((m = blockRe.exec(text)) !== null) {
+    const qty    = parseITA(m[1]);
+    const isin   = m[3];
+    const mktVal = parseITA(m[6]);
+    // Il prezzo è l'ultimo numero nel blocco tra ISIN e la data
+    const betweenBlock = m[4];
+    const priceM = [...betweenBlock.matchAll(/([\d]+,[\d]+)/g)];
+    const price  = priceM.length ? parseITA(priceM[priceM.length - 1][1]) : 0;
+    // Nome: prime parole significative prima dell'ISIN
+    const nameRaw = m[2].replace(/\s+/g,' ').trim();
+    const nome = nameRaw.length > 50 ? nameRaw.substring(0,50)+'…' : nameRaw;
+    results.push({ isin, nome, qty, price, mktVal });
+  }
+  return results.length ? results : null;
+}
+
+// Mappa ISIN → chiave interna (per ETF già noti)
+const ISIN_TO_KEY = {
+  'IE00BG0J4C88': 'etf1',
+  'IE00BMH5YF48': 'etf2',
+};
+
+// ── DROPZONE ──────────────────────────────────────────
+function onDragOver(e){ e.preventDefault(); document.getElementById('dropzone').classList.add('drag-over'); }
+function onDragLeave(){ document.getElementById('dropzone').classList.remove('drag-over'); }
+function onDrop(e){ e.preventDefault(); document.getElementById('dropzone').classList.remove('drag-over'); handleFiles(e.dataTransfer.files); }
+
+let _pdfResults = {};
+
+async function handleFiles(files) {
+  if(!files.length) return;
+  _pdfResults = {};
+  const prog = document.getElementById('dropzone-progress');
+  prog.style.display = 'block';
+  prog.innerHTML = '';
+
+  const addRow = (name, status, msg) => {
+    const dot = status==='loading'?'dot-loading':status==='ok'?'dot-ok':'dot-err';
+    prog.innerHTML += `<div class="progress-item"><div class="progress-dot ${dot}"></div>${name}: ${msg}</div>`;
+  };
+
+  for(const file of files){
+    if(!file.name.endsWith('.pdf')){ addRow(file.name,'err','non è un PDF'); continue; }
+    addRow(file.name,'loading','lettura in corso...');
+    try{
+      const text = await extractTextFromPDF(file);
+      const bank = detectBank(text);
+      if(!bank){ prog.innerHTML=prog.innerHTML.replace('lettura in corso...','formato non riconosciuto'); continue; }
+
+      let extracted = null;
+      if(bank==='ca')       extracted = extractCA(text);
+      if(bank==='n26')      extracted = extractN26(text);
+      if(bank==='tr-conto') {
+        extracted = extractTRConto(text);
+        const acquisti = extractTRContoAcquisti(text);
+        if(acquisti) _pdfResults.capitaleAcquisti = acquisti;
+      }
+      if(bank==='tr-titoli'){ const e=extractTRTitoli(text); if(e){ extracted={}; e.forEach(et=>{ extracted[et.isin]={nome:et.nome, qty:et.qty, price:et.price, mktVal:et.mktVal}; }); } }
+
+      if(!extracted){ prog.innerHTML=prog.innerHTML.replace('lettura in corso...','valori non trovati'); continue; }
+
+      Object.assign(_pdfResults, bank==='tr-titoli' ? { etfs: extracted } : extracted);
+
+      const bankName = {'ca':'Crédit Agricole','n26':'N26','tr-conto':'Trade Republic conto','tr-titoli':'Trade Republic titoli'}[bank]||bank;
+      prog.innerHTML=prog.innerHTML.replace('lettura in corso...',`✓ ${bankName} letto`);
+    }catch(err){
+      prog.innerHTML=prog.innerHTML.replace('lettura in corso...',`errore: ${err.message||err}`);
+    }
+  }
+
+  if(Object.keys(_pdfResults).length) setTimeout(()=>showConfirmModal(), 400);
+}
+
+// ── CONFIRM MODAL ─────────────────────────────────────
+const CONF_FIELDS = [
+  { key:'ca',    label:'Crédit Agricole',         color:'#4fc3f7', type:'saldo' },
+  { key:'n26',   label:'N26 – conto principale',  color:'#a78bfa', type:'saldo' },
+  { key:'n26s',  label:'N26 – spazio risparmi',   color:'#c4b5fd', type:'saldo' },
+  { key:'trliq', label:'Trade Republic liquidità',color:'#67e8f9', type:'saldo' },
+  { key:'etf1',  label:'iShares Digital Security',color:'#7ee8a2', type:'etf', isin:'IE00BG0J4C88' },
+  { key:'etf2',  label:'Global X Cloud Comp.',    color:'#34d399', type:'etf', isin:'IE00BMH5YF48' },
+];
+
+function showConfirmModal(){
+  const rows = document.getElementById('confirm-rows');
+  rows.innerHTML = '';
+  let found = 0;
+
+  // Campi liquidità fissi
+  const LIQ_FIELDS = [
+    { key:'ca',    label:'Crédit Agricole',         color:'#4fc3f7' },
+    { key:'n26',   label:'N26 – conto principale',  color:'#a78bfa' },
+    { key:'n26s',  label:'N26 – spazio risparmi',   color:'#c4b5fd' },
+    { key:'trliq', label:'Trade Republic liquidità',color:'#67e8f9' },
+  ];
+
+  LIQ_FIELDS.forEach(f => {
+    const val = _pdfResults[f.key];
+    const isFound = val !== undefined;
+    if(isFound) found++;
+    const abbr = f.key==='ca'?'CA':f.key.startsWith('n26')?'N26':'TR';
+    rows.innerHTML += `<div class="confirm-row">
+      <div class="confirm-icon" style="background:${f.color}22;color:${f.color}">${abbr}</div>
+      <div><div class="confirm-label">${f.label}</div></div>
+      <input class="confirm-val" type="number" step="0.01" id="cv-${f.key}"
+        value="${isFound ? val.toFixed(2) : ''}" placeholder="${isFound?'':'non trovato'}"
+        style="background:var(--surface);border:1px solid ${isFound?'var(--border)':'#3a3f4a'};border-radius:6px;color:${isFound?'var(--text)':'var(--muted)'};font-family:var(--mono);font-size:0.82rem;padding:0.35rem 0.6rem;outline:none;text-align:right">
+      <div class="confirm-status">${isFound?'✓':'·'}</div>
+    </div>`;
+  });
+
+  // ETF dinamici (tutti quelli trovati nel PDF)
+  if(_pdfResults.etfs && Object.keys(_pdfResults.etfs).length) {
+    rows.innerHTML += `<div style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:0.75rem 0 0.25rem">ETF trovati nel PDF</div>`;
+    Object.entries(_pdfResults.etfs).forEach(([isin, e]) => {
+      found++;
+      const isNota = !ISIN_TO_KEY[isin];
+      rows.innerHTML += `<div class="confirm-row">
+        <div class="confirm-icon" style="background:#7ee8a222;color:#7ee8a2;font-size:0.52rem">ETF</div>
+        <div>
+          <div class="confirm-label">${e.nome}</div>
+          <div style="font-size:0.65rem;color:var(--muted);font-family:var(--mono)">${isin} · ${e.qty.toFixed(4)} pz · €${e.price.toFixed(2)}/pz ${isNota?'<span style="color:var(--amber)">· nuovo</span>':''}</div>
+        </div>
+        <input class="confirm-val" type="number" step="0.01" id="cv-etf-${isin}"
+          value="${e.mktVal.toFixed(2)}"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.82rem;padding:0.35rem 0.6rem;outline:none;text-align:right">
+        <div class="confirm-status">✓</div>
+      </div>`;
+    });
+  }
+
+  // Sezione capitale PAC (solo se trovati acquisti nel PDF TR conto)
+  if(_pdfResults.capitaleAcquisti) {
+    const acq = _pdfResults.capitaleAcquisti;
+    const capAttuale = state.capitaleEtf || 0;
+    const nuovoTotale = parseFloat((capAttuale + acq.totale).toFixed(2));
+    found++;
+    rows.innerHTML += `
+      <div style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:0.75rem 0 0.25rem">Capitale PAC</div>
+      <div class="confirm-row">
+        <div class="confirm-icon" style="background:#ffd16622;color:#ffd166;font-size:0.56rem">PAC</div>
+        <div>
+          <div class="confirm-label">Capitale versato totale</div>
+          <div style="font-size:0.65rem;color:var(--muted);font-family:var(--mono)">
+            trovati <strong style="color:var(--text)">${acq.count} acquisti</strong> · +€${fmt(acq.totale)} questo periodo<br>
+            attuale €${fmt(capAttuale)} → <span style="color:var(--accent)">nuovo €${fmt(nuovoTotale)}</span>
+          </div>
+        </div>
+        <input class="confirm-val" type="number" step="0.01" id="cv-capitale-nuovo"
+          value="${nuovoTotale.toFixed(2)}"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:0.82rem;padding:0.35rem 0.6rem;outline:none;text-align:right">
+        <div class="confirm-status">✓</div>
+      </div>`;
+  }
+
+  document.getElementById('pdf-modal-sub').textContent = `${found} valori trovati · modifica se necessario`;
+  document.getElementById('pdf-nota').value = '';
+  document.getElementById('modal-pdf').classList.add('open');
+}
+
+function applicaPDF(){
+  // Applica liquidità
+  ['ca','n26','n26s','trliq'].forEach(k => {
+    const inp = document.getElementById('cv-'+k);
+    if(!inp) return;
+    const v = parseFloat(inp.value);
+    if(!isNaN(v) && v >= 0) state.conti[k].saldo = v;
+  });
+
+  // Applica ETF dinamicamente
+  if(_pdfResults.etfs) {
+    Object.entries(_pdfResults.etfs).forEach(([isin, e]) => {
+      const inp = document.getElementById('cv-etf-'+isin);
+      const v = parseFloat(inp?.value);
+      if(isNaN(v) || v < 0) return;
+
+      // Controlla se è un ETF già noto
+      const existingKey = ISIN_TO_KEY[isin];
+      if(existingKey) {
+        // Aggiorna ETF esistente
+        state.conti[existingKey].saldo = v;
+        state.conti[existingKey].qty   = e.qty;
+        state.conti[existingKey].price = e.price;
+      } else {
+        // ETF nuovo: crea una nuova voce dinamicamente
+        const newKey = 'etf_' + isin;
+        ISIN_TO_KEY[isin] = newKey; // registra per le prossime volte
+        state.conti[newKey] = {
+          nome: e.nome,
+          tipo: isin,
+          saldo: v,
+          colore: '#a3e635',
+          isEtf: true,
+          qty: e.qty,
+          price: e.price,
+        };
+      }
+    });
+  }
+
+  // Aggiorna capitale PAC se trovato
+  const capInp = document.getElementById('cv-capitale-nuovo');
+  if(capInp) {
+    const v = parseFloat(capInp.value);
+    if(!isNaN(v) && v >= 0) state.capitaleEtf = v;
+  }
+
+  const nota = document.getElementById('pdf-nota').value.trim();
+  pushStorico('PDF estratti conto', nota);
+  save(state);
+  closeModal('modal-pdf');
+  document.getElementById('dropzone-progress').style.display = 'none';
+  render();
+}
+
+// ── EXPORT / IMPORT ───────────────────────────────────
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='patrimonio_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+}
+function importJSON(e){
+  const file=e.target.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!d.conti||!d.storico)throw 0; state=d; save(state); render(); e.target.value=''; }catch{alert('File non valido');} };
+  r.readAsText(file);
+}
+
+document.getElementById('sel-conto').addEventListener('change',onContoChange);
+render();
+</script>
+</body>
+</html>
