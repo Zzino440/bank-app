@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useSnapshots } from "@/hooks/useSnapshots";
 import type { Account } from "@/lib/types";
@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editAccountId, setEditAccountId] = useState<string | null>(null);
   const [pdfResults, setPdfResults] = useState<PdfResults | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
 
   if (loadingAccounts || loadingSnapshots) {
     return (
@@ -136,10 +137,72 @@ export default function Dashboard() {
     await addSnapshot(restoredAccounts, newTotal, "↩ ripristino", `stato del ${snapshot.data}`);
   }
 
+  function handleExport() {
+    const data = { accounts, snapshots };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `patrimonio_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (!data.accounts || !data.snapshots) {
+          alert("File non valido");
+          return;
+        }
+
+        // Aggiorna ogni account
+        for (const acc of data.accounts) {
+          await updateAccount(acc.id, {
+            saldo: acc.saldo,
+            qty: acc.qty,
+            price: acc.price,
+            capital_invested: acc.capital_invested,
+          });
+        }
+
+        await refetchAccounts();
+        alert("Importazione completata");
+      } catch {
+        alert("File non valido");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
   return (
     <div>
-      {/* Bottone manuale */}
-      <div className="mb-6 flex justify-end">
+      {/* Azioni header */}
+      <div className="mb-6 flex justify-end gap-2">
+        <button
+          onClick={handleExport}
+          className="rounded-lg border border-border px-3.5 py-2 font-mono text-xs text-muted transition-colors hover:border-surface-3 hover:text-text"
+        >
+          ⬇ Esporta
+        </button>
+        <label className="cursor-pointer rounded-lg border border-border px-3.5 py-2 font-mono text-xs text-muted transition-colors hover:border-surface-3 hover:text-text">
+          ⬆ Importa
+          <input
+            ref={importRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImport}
+          />
+        </label>
         <button
           onClick={handleOpenManual}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-[#0a1a0e] transition-opacity hover:opacity-85"
