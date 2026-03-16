@@ -14,6 +14,7 @@ const ISIN_TO_KEY: Record<string, string> = {
 interface Props {
   results: PdfResults;
   accounts: Account[];
+  userId: string;
   onApply: (updates: AccountUpdate[], nota: string) => Promise<void>;
   onClose: () => void;
 }
@@ -32,7 +33,7 @@ const LIQ_FIELDS = [
   { key: "trliq", label: "Trade Republic liquidità", color: "#67e8f9", abbr: "TR" },
 ];
 
-export default function PdfConfirmModal({ results, accounts, onApply, onClose }: Props) {
+export default function PdfConfirmModal({ results, accounts, userId, onApply, onClose }: Props) {
   // State per i valori editabili
   const [liqValues, setLiqValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
@@ -105,7 +106,7 @@ export default function PdfConfirmModal({ results, accounts, onApply, onClose }:
           changes: {},
           newAccount: {
             id: newId,
-            user_id: accounts[0]?.user_id ?? "",
+            user_id: userId,
             nome: e.nome,
             tipo: isin,
             saldo: val,

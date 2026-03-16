@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useSnapshots } from "@/hooks/useSnapshots";
 import type { Account } from "@/lib/types";
@@ -15,6 +17,14 @@ import SnapshotLog from "./SnapshotLog";
 import type { Snapshot } from "@/lib/types";
 
 export default function Dashboard() {
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
+
   const {
     accounts,
     liquidityAccounts,
@@ -32,11 +42,19 @@ export default function Dashboard() {
 
   const { snapshots, loading: loadingSnapshots, addSnapshot, deleteSnapshot } = useSnapshots();
 
+  const [userId, setUserId] = useState<string>("");
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editAccountId, setEditAccountId] = useState<string | null>(null);
   const [pdfResults, setPdfResults] = useState<PdfResults | null>(null);
   const [pdfResetSignal, setPdfResetSignal] = useState(0);
   const importRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id);
+    });
+  }, []);
 
   if (loadingAccounts || loadingSnapshots) {
     return (
@@ -213,6 +231,12 @@ export default function Dashboard() {
         >
           + Manuale
         </button>
+        <button
+          onClick={handleLogout}
+          className="rounded-lg border border-border px-3.5 py-2 font-mono text-xs text-muted transition-colors hover:border-surface-3 hover:text-text"
+        >
+          Esci
+        </button>
       </div>
 
       <PdfDropzone onResults={setPdfResults} resetSignal={pdfResetSignal} />
@@ -262,6 +286,7 @@ export default function Dashboard() {
         <PdfConfirmModal
           results={pdfResults}
           accounts={accounts}
+          userId={userId}
           onApply={handlePdfApply}
           onClose={handlePdfFlowClose}
         />
