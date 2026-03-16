@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { extractTextFromPDF } from "@/lib/pdf/extract";
 import { detectBank, type BankType } from "@/lib/pdf/detect";
 import {
@@ -27,6 +27,7 @@ interface ProgressItem {
 
 interface Props {
   onResults: (results: PdfResults) => void;
+  resetSignal: number;
 }
 
 const BANK_NAMES: Record<BankType, string> = {
@@ -36,10 +37,16 @@ const BANK_NAMES: Record<BankType, string> = {
   "tr-titoli": "Trade Republic titoli",
 };
 
-export default function PdfDropzone({ onResults }: Props) {
+export default function PdfDropzone({ onResults, resetSignal }: Props) {
   const [progress, setProgress] = useState<ProgressItem[]>([]);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setProgress([]);
+    setDragging(false);
+    if (inputRef.current) inputRef.current.value = "";
+  }, [resetSignal]);
 
   function addProgress(name: string, status: ProgressItem["status"], message: string) {
     setProgress((prev) => [...prev, { name, status, message }]);

@@ -34,7 +34,7 @@ export default function AccountList({
 
         {showCapital && totalCapitalInvested > 0 && (
           <div className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-surface p-3.5 opacity-75">
-            <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg bg-amber/10 font-mono text-[0.56rem] font-medium text-amber">
+            <div className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-lg bg-amber/10 font-mono text-[0.56rem] font-medium text-amber">
               PAC
             </div>
             <div className="min-w-0 flex-1">

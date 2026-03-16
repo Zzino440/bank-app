@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editAccountId, setEditAccountId] = useState<string | null>(null);
   const [pdfResults, setPdfResults] = useState<PdfResults | null>(null);
+  const [pdfResetSignal, setPdfResetSignal] = useState(0);
   const importRef = useRef<HTMLInputElement>(null);
 
   if (loadingAccounts || loadingSnapshots) {
@@ -60,6 +61,11 @@ export default function Dashboard() {
   function handleOpenManual() {
     setEditAccountId(null);
     setEditModalOpen(true);
+  }
+
+  function handlePdfFlowClose() {
+    setPdfResults(null);
+    setPdfResetSignal((prev) => prev + 1);
   }
 
   async function handleManualSave(id: string, updates: Partial<Account>) {
@@ -104,8 +110,6 @@ export default function Dashboard() {
     }
     const newTotal = updatedAccounts.reduce((s, a) => s + a.saldo, 0);
     await addSnapshot(updatedAccounts, newTotal, "PDF estratti conto", nota || undefined);
-
-    setPdfResults(null);
   }
 
   async function handleRestore(snapshot: Snapshot) {
@@ -211,7 +215,7 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <PdfDropzone onResults={setPdfResults} />
+      <PdfDropzone onResults={setPdfResults} resetSignal={pdfResetSignal} />
 
       <TotalSummary
         accounts={accounts}
@@ -259,7 +263,7 @@ export default function Dashboard() {
           results={pdfResults}
           accounts={accounts}
           onApply={handlePdfApply}
-          onClose={() => setPdfResults(null)}
+          onClose={handlePdfFlowClose}
         />
       )}
     </div>
