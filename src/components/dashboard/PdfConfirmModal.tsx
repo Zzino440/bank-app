@@ -87,14 +87,14 @@ export default function PdfConfirmModal({ results, accounts, userId, onApply, on
       if (isNaN(val) || val < 0) return;
 
       const existingKey = ISIN_TO_KEY[isin];
-      const existingAccount = existingKey
-        ? accounts.find((a) => a.id === existingKey)
-        : accounts.find((a) => a.tipo === isin);
+      const existingAccount =
+        (existingKey ? accounts.find((a) => a.id === existingKey) : null) ??
+        accounts.find((a) => a.tipo === isin);
 
       if (existingAccount) {
         updates.push({
           id: existingAccount.id,
-          changes: { saldo: val, qty: e.qty, price: e.price },
+          changes: { saldo: val, qty: e.qty, price: e.price, nome: e.nome },
         });
       } else {
         // ETF nuovo

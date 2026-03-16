@@ -5,12 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 import type { Account } from "@/lib/types";
 
 const DEFAULT_ACCOUNTS = [
-  { id: "ca",    nome: "Crédit Agricole",          tipo: "Corrente",     colore: "#4fc3f7", is_etf: false, saldo: 0, sort_order: 0 },
-  { id: "n26",   nome: "N26 – conto principale",   tipo: "Corrente",     colore: "#a78bfa", is_etf: false, saldo: 0, sort_order: 1 },
-  { id: "n26s",  nome: "N26 – spazio risparmi",    tipo: "Risparmio",    colore: "#c4b5fd", is_etf: false, saldo: 0, sort_order: 2 },
-  { id: "trliq", nome: "Trade Republic liquidità", tipo: "Corrente",     colore: "#67e8f9", is_etf: false, saldo: 0, sort_order: 3 },
-  { id: "etf1",  nome: "ETF 1",                    tipo: "IE00BG0J4C88", colore: "#a3e635", is_etf: true,  saldo: 0, sort_order: 4 },
-  { id: "etf2",  nome: "ETF 2",                    tipo: "IE00BMH5YF48", colore: "#86efac", is_etf: true,  saldo: 0, sort_order: 5 },
+  { id: "ca",    nome: "Crédit Agricole",          tipo: "Corrente",  colore: "#4fc3f7", is_etf: false, saldo: 0, sort_order: 0 },
+  { id: "n26",   nome: "N26 – conto principale",   tipo: "Corrente",  colore: "#a78bfa", is_etf: false, saldo: 0, sort_order: 1 },
+  { id: "n26s",  nome: "N26 – spazio risparmi",    tipo: "Risparmio", colore: "#c4b5fd", is_etf: false, saldo: 0, sort_order: 2 },
+  { id: "trliq", nome: "Trade Republic liquidità", tipo: "Corrente",  colore: "#67e8f9", is_etf: false, saldo: 0, sort_order: 3 },
 ];
 
 export function useAccounts() {
